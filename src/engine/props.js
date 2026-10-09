@@ -163,11 +163,34 @@ const CATEGORY_FORMS = {
   textile: TOOL_FORMS.cloth,
 };
 
+/**
+ * Invisible-but-pickable material for the generous click volumes below:
+ * colorWrite/depthWrite off — renders nothing, raycasts fine.
+ */
+const PICK_MAT = new THREE.MeshStandardMaterial({ colorWrite: false, depthWrite: false });
+
 export function buildToolProp(tool) {
   const form = TOOL_FORMS[tool.id] ?? CATEGORY_FORMS[tool.category] ?? TOOL_FORMS.stone;
   const group = form();
   group.name = `tool-${tool.id}`;
   group.userData = { kind: "tool", id: tool.id };
+
+  // Generous pick volume: a candle is 5cm wide — at room scale that is a
+  // ~10px target, and ritual steps ask the user to CLICK it. A near-miss
+  // lands on the cloth or altar and reads as "the ritual is broken". The
+  // proxy makes the target the size it looks, not the size it is.
+  group.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(group);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const r = Math.max(size.x, size.z) / 2 + 0.07;
+  const h = Math.max(size.y + 0.1, r * 1.2);
+  const proxy = new THREE.Mesh(new THREE.CylinderGeometry(r, r, h, 10), PICK_MAT);
+  proxy.name = "pick-proxy";
+  proxy.position.copy(center);
+  proxy.castShadow = false; // invisible things must not cast real shadows
+  proxy.receiveShadow = false;
+  group.add(proxy);
   return group;
 }
 

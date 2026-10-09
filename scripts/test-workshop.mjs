@@ -374,6 +374,37 @@ ok("overlay ownership: only ritual.js drives the ritual panels", () => {
   assert.ok(!altar.includes("ritual-console"), "altar.js never touches ritual-console");
 });
 
+
+ok("a near-miss click still lights the candle (generous pick volume)", () => {
+  builder.arrangement.clear();
+  machine.reset();
+  machine.transition("CODEX"); machine.transition("PLACING"); machine.transition("BUILDING");
+  startRitualViaUI(0);
+  // fast-forward the walk to the flame step with cloth + candle at the center
+  byId("ritual-place-one").listeners.click[0]({ target: byId("ritual-place-one") });
+  let c = project(...ZONE_POINT["altar-center"]); click(c.x, c.y);
+  clickPlacedItem("cloth");
+  assert.match(byId("ritual-step-num").textContent, /Step 2 of 5/, "at the flame step");
+  byId("ritual-place-one").listeners.click[0]({ target: byId("ritual-place-one") });
+  c = project(...ZONE_POINT["altar-center"]); click(c.x, c.y);
+  scene.updateMatrixWorld(true); // the render loop does this every frame
+  // the wax is 5cm wide; the user's aim lands beside it — 8cm off the axis,
+  // over bare-looking cloth, inside the generous pick volume
+  const [uid] = [...builder.arrangement.items.entries()].filter(([, it]) => it.id === "candle").map(([u]) => u);
+  let group = null;
+  scene.traverse((o) => {
+    if (!group && o.userData?.uid === uid) group = o;
+  });
+  assert.ok(group, "candle mesh is in the scene");
+  const base = new THREE.Vector3();
+  group.getWorldPosition(base);
+  const v = base.clone().project(camera);
+  const x = (v.x * 0.5 + 0.5) * 1280 + 11; // 11px right of the candle's base
+  const y = (-v.y * 0.5 + 0.5) * 720 - 8;
+  click(x, y);
+  assert.match(byId("ritual-step-num").textContent, /Step 3 of 5/, "the candle caught — the ritual advanced");
+});
+
 /* ---- every ritual, walked end-to-end through the real UI ------------------ */
 function startRitualViaUI(index) {
   byId("btn-ritual").listeners.click[0]({});
@@ -474,9 +505,10 @@ ok("evening-flame walks end-to-end through the real UI", () => {
   builder.arrangement.clear();
   machine.reset();
   machine.transition("CODEX"); machine.transition("PLACING"); machine.transition("BUILDING");
-  // seed the symbol the trace step will want (user places it while building)
+  // seed the symbol the trace step will want (east: the candle later claims
+  // the center, and its pick volume wraps whatever shares that spot)
   pickChip("symbol", "pentacle");
-  let p = project(...ZONE_POINT["altar-center"]); click(p.x, p.y);
+  let p = project(...ZONE_POINT["altar-east"]); click(p.x, p.y);
   startRitualViaUI(1);
   assert.match(stepNum(), /Step 1 of 5/, "evening-flame step 1");
 

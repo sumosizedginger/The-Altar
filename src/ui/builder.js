@@ -317,30 +317,49 @@ export function initBuilder(handles) {
   function hitTest(e, { forPlacing = false } = {}) {
     setPointer(e);
     const hits = raycaster.intersectObjects(scene.children, true);
-    for (const hit of hits) {
+
+    // First of each kind, in ray order (closest first). A tool's generous
+    // pick-proxy counts as the item — but never hides a genuinely closer
+    // solid thing, and only decides when it is the nearest hit taken.
+    let itemHit = null; // {uid, viaProxy, index}
+    let zoneHit = null; // {zone, index}
+    for (const [index, hit] of hits.entries()) {
       // walk up: item roots carry uid, the ghost root carries isGhost
       let o = hit.object;
       let ghostHit = false;
+      let viaProxy = false;
+      let uid = null;
       while (o) {
         if (o.userData?.isGhost) {
           ghostHit = true;
           break;
         }
-        if (o.userData?.uid) {
-          // while placing, an existing item is part of its zone's surface —
-          // the candle goes ON the cloth, so fall through to that zone
-          if (forPlacing) {
-            const rec = arrangement.get(o.userData.uid);
-            if (rec) return { type: "zone", zone: rec.zoneId, hit };
-          }
-          return { type: "item", uid: o.userData.uid, hit };
-        }
+        if (o.name === "pick-proxy") viaProxy = true;
+        if (o.userData?.uid) uid = o.userData.uid;
         o = o.parent;
       }
       if (ghostHit) continue;
-      const name = hit.object.name ?? "";
-      const zone = zoneForPoint(hit.point, name);
-      if (zone) return { type: "zone", zone, hit };
+      if (uid) {
+        if (!itemHit) itemHit = { uid, viaProxy, index };
+        continue;
+      }
+      if (!zoneHit) {
+        const zone = zoneForPoint(hit.point, hit.object.name ?? "");
+        if (zone) zoneHit = { zone, index };
+      }
+    }
+
+    // nearest hit wins — proxy or solid, item or surface
+    const pick = [itemHit, zoneHit].filter(Boolean).sort((a, b) => a.index - b.index)[0];
+    if (pick && pick.zone) return { type: "zone", zone: pick.zone, hit: hits[pick.index] };
+    if (pick) {
+      // while placing, an existing item is part of its zone's surface —
+      // the candle goes ON the cloth, so fall through to that zone
+      if (forPlacing) {
+        const rec = arrangement.get(pick.uid);
+        if (rec) return { type: "zone", zone: rec.zoneId, hit: hits[pick.index] };
+      }
+      return { type: "item", uid: pick.uid, hit: hits[pick.index] };
     }
     return null;
   }
