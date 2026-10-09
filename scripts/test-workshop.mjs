@@ -270,6 +270,19 @@ ok("plaque wraps its strokes: no stray black disc beside the symbol", () => {
     assert.ok(disc, `${mount}: plaque has a disc`);
     assert.equal(disc.castShadow, false, `${mount}: disc never shadows its own wall`);
     assert.ok(disc.material.emissiveIntensity > 0, `${mount}: disc carries a warm emissive floor (no black-void metal)`);
+    // legibility floors: the inlay must survive a candlelit dusk room
+    const rim = plaque.group.children.find((o) => o.isMesh && o.geometry?.type === "TorusGeometry");
+    assert.ok(rim && rim.castShadow === false, `${mount}: gold rim frames the disc (shadow-free)`);
+    const st = plaque.instance.strokes[0];
+    st.geom.computeBoundingBox();
+    const tubeDiameter = st.geom.boundingBox.max.z - st.geom.boundingBox.min.z;
+    assert.ok(tubeDiameter >= 0.05, `${mount}: stroke weight ≥ 0.025 pre-scale (got ${tubeDiameter.toFixed(3)})`);
+    const ink = st.mesh.material;
+    assert.ok(ink.emissiveIntensity >= 0.4, `${mount}: stroke ink carries its own light (emissive ${ink.emissiveIntensity})`);
+    // isolation is across plaques: behaviors mutate stroke material in place
+    const twin = buildItem("symbol", SYMBOLS_BY_ID["pentacle"], { mount });
+    assert.ok(!Object.is(ink, twin.instance.strokes[0].mesh.material), `${mount}: ink is per-plaque (behaviors mutate it in place)`);
+    twin.instance.dispose();
   }
 });
 

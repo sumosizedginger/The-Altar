@@ -174,6 +174,22 @@ export function buildToolProp(tool) {
 /* ---- symbol plaques --------------------------------------------------------- */
 
 /**
+ * Gilded-inlay ink for plaque strokes. Bare metal disappears in a
+ * candlelit room (no environment map); this carries its own warm light
+ * so the glyph reads at dusk. One instance per plaque — behaviors
+ * mutate stroke emissiveIntensity in place.
+ */
+function makePlaqueInk() {
+  return new THREE.MeshStandardMaterial({
+    color: 0xd9b36a,
+    metalness: 0.3,
+    roughness: 0.45,
+    emissive: 0x7a5a22,
+    emissiveIntensity: 0.75,
+  });
+}
+
+/**
  * A symbol plaque: brass disc + the symbol's live strokes.
  * mount: "stand" (surfaces/floor) | "wall" | "worn" (small, hanging).
  */
@@ -191,11 +207,19 @@ export function buildSymbolPlaque(symbol, { mount = "stand", radius = 0.013 } = 
   disc.castShadow = false; // a wall plaque shadowing its own wall = acne + blobs
   group.add(disc);
 
-  const instance = new SymbolInstance(symbol, { radius });
+  // gold rim so the plaque reads as an object, not a shadow, on dark walls
+  const rim = mesh(new THREE.TorusGeometry(discR, 0.008, 10, 40), MAT.brass);
+  rim.castShadow = false;
+  group.add(rim);
+
+  const instance = new SymbolInstance(symbol, {
+    radius: mount === "worn" ? 0.06 : 0.032, // inlay weight before holder scale
+    material: makePlaqueInk(),
+  });
   const holder = new THREE.Group(); // wrapper owns the plaque scale — the
   // instance group keeps its centering offset and stays free for behaviors
-  holder.scale.setScalar(mount === "worn" ? 0.2 : 0.42);
-  holder.position.z = mount === "wall" ? 0.012 : 0.014;
+  holder.scale.setScalar(mount === "worn" ? 0.2 : 0.44);
+  holder.position.z = mount === "wall" ? 0.016 : 0.018; // strokes ride proud of the face
   holder.add(instance.group);
   group.add(holder);
 
