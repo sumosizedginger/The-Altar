@@ -30,6 +30,7 @@ export function initRitual({ app, builder, audio, camera, notice }) {
   const machine = app.machine;
   let runner = null;
   let lastRecord = null;
+  let closed = false; // the completion block must fire exactly once
   let trace = null; // {uid, startX, startY, dist}
 
   /* ---- picker ------------------------------------------------------------ */
@@ -78,6 +79,7 @@ export function initRitual({ app, builder, audio, camera, notice }) {
     const ritual = RITUALS.find((r) => r.id === ritualId);
     if (!ritual) return;
     runner = new RitualRunner({ ritual, arrangement: builder.arrangement, bus });
+    closed = false;
     closeAll();
     $("ritual-console").hidden = false;
     audio.unlock();
@@ -91,6 +93,7 @@ export function initRitual({ app, builder, audio, camera, notice }) {
   }
 
   function renderStep() {
+    if (!runner) return; // the runner's constructor emits its own step event before assignment
     const s = runner.step;
     const n = runner.stepIndex + 1;
     $("ritual-step-num").textContent = `Step ${n} of ${runner.ritual.steps.length}`;
@@ -200,18 +203,21 @@ export function initRitual({ app, builder, audio, camera, notice }) {
 
   /* ---- per-frame -------------------------------------------------------------------- */
   function update(dt) {
-    if (!runner || runner.finished) return;
-    const out = runner.update(dt);
+    if (!runner || closed) return;
+    const out = runner.update(dt); // may complete a wait step (and the ritual)
     if (out.hint) $("ritual-hint").textContent = out.hint;
     const s = runner.step;
-    if (s.action === "wait" && out.waitRemaining != null) {
+    if (s && s.action === "wait" && out.waitRemaining != null) {
       const bar = $("ritual-wait");
       bar.max = s.waitSec ?? 1;
       bar.value = (s.waitSec ?? 1) - out.waitRemaining;
       $("ritual-hint").textContent =
         out.waitRemaining > 0.5 ? `rest — ${Math.ceil(out.waitRemaining)} breaths` : "";
     }
+    // a ritual whose LAST step was a click/trace/pour is already finished
+    // here — the old early-return meant it never closed
     if (runner.finished) {
+      closed = true;
       lastRecord = runner.serialize();
       closeAll();
       audio.playAt("bowl", { x: 0, y: 1.3, z: -4.6 }, { level: 0.9 });
@@ -261,6 +267,12 @@ export function initRitual({ app, builder, audio, camera, notice }) {
   document.addEventListener("pointerdown", onPointerDown);
   document.addEventListener("pointermove", onPointerMove);
   document.addEventListener("pointerup", onPointerUp);
+
+  // the console is a view of the runner: re-render on every step advance,
+  // or completed steps happen silently and the walk looks frozen
+  bus.on(EVENTS.RITUAL_STEP, () => {
+    renderStep();
+  });
 
   bus.on(EVENTS.STATE_CHANGE, ({ from, to } = {}) => {
     if (machine.state === "RITUAL") {

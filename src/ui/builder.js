@@ -249,6 +249,9 @@ export function initBuilder(handles) {
   /* ---- ghost (place preview) ---------------------------------------------------- */
   function setPlacing(kind, data) {
     cancelSelection();
+    // any arm-the-hand path (library chip, prompt-place, ritual's place-one)
+    // must open the commit path — RITUAL steps aside while you place
+    if (machine.state === "RITUAL") machine.transition("PLACING");
     mode.kind = kind;
     mode.data = data;
     destroyGhost();
@@ -307,7 +310,7 @@ export function initBuilder(handles) {
     raycaster.setFromCamera(pointer, camera);
   }
 
-  function hitTest(e) {
+  function hitTest(e, { forPlacing = false } = {}) {
     setPointer(e);
     const hits = raycaster.intersectObjects(scene.children, true);
     for (const hit of hits) {
@@ -319,7 +322,15 @@ export function initBuilder(handles) {
           ghostHit = true;
           break;
         }
-        if (o.userData?.uid) return { type: "item", uid: o.userData.uid, hit };
+        if (o.userData?.uid) {
+          // while placing, an existing item is part of its zone's surface —
+          // the candle goes ON the cloth, so fall through to that zone
+          if (forPlacing) {
+            const rec = arrangement.get(o.userData.uid);
+            if (rec) return { type: "zone", zone: rec.zoneId, hit };
+          }
+          return { type: "item", uid: o.userData.uid, hit };
+        }
         o = o.parent;
       }
       if (ghostHit) continue;
@@ -357,7 +368,7 @@ export function initBuilder(handles) {
       return;
     }
 
-    const hit = hitTest(e);
+    const hit = hitTest(e, { forPlacing: Boolean(mode.kind) });
 
     /* placing: ghost follows + verdict chip teaches */
     if (mode.kind) {
@@ -458,7 +469,7 @@ export function initBuilder(handles) {
     if (mode.kind && ["PLACING", "BUILDING"].includes(machine.state)) {
       // commit a placement — judge the click's own hit, not whether a hover
       // ghost happened to spawn (rules + capacity re-checked by the model)
-      const hit = hitTest(e);
+      const hit = hitTest(e, { forPlacing: true });
       if (hit?.type === "zone") {
         const anchor = zoneAnchor(hit.zone, hit.hit);
         const p = new THREE.Vector3(hit.hit.point.x, anchor.y, hit.hit.point.z);
