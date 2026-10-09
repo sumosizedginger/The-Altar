@@ -1,0 +1,20 @@
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Node tooling (no bundler is used, but validate tooling may install helpers)
+node_modules/
+npm-debug.log*
+
+# Build / capture artifacts (screenshots & exports are user-generated, never committed)
+exports/
+captures/
+*.png.tmp
+
+# Local environment
+.env
+.env.*

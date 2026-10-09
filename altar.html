@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>The Workshop — Symbols &amp; Sigils: The Living Altar</title>
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three/three.module.js" } }
+  </script>
+  <link rel="stylesheet" href="./assets/parchment.css">
+  <style>
+    html, body { height: 100%; overflow: hidden; }
+    #scene {
+      position: fixed;
+      inset: 0;
+      display: block;
+      width: 100%;
+      height: 100%;
+      /* the canvas takes raw pointer input for raycast/orbit; every control
+         is DOM layered above it — drags never cross between the two worlds */
+      touch-action: none;
+    }
+    .hud {
+      position: fixed;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      flex-wrap: wrap;
+      background: rgba(248, 244, 234, 0.94);
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      box-shadow: var(--shadow);
+      padding: 0.45rem 0.9rem;
+      backdrop-filter: blur(2px);
+    }
+    #controls { top: 0.8rem; left: 0.8rem; }
+    #controls h1 { font-size: 1.02rem; }
+    #controls .sub { color: var(--gold-deep); font-size: 0.66rem; letter-spacing: 0.18em; text-transform: uppercase; }
+    .hud label { font-size: 0.82rem; color: var(--ink-soft); display: inline-flex; align-items: center; gap: 0.35em; }
+    .hud select { font: inherit; font-size: 0.85rem; padding: 0.15em 0.5em; border: 1px solid var(--rule); border-radius: 3px; background: var(--parchment); color: var(--ink); }
+    /* ---- views (named sightlines) ---- */
+    #views {
+      top: 5rem; left: 0.8rem;
+      flex-direction: column; align-items: stretch; gap: 0.28rem;
+      padding: 0.5rem 0.7rem;
+    }
+    #views[hidden] { display: none; }
+    #views .views-label { font-size: 0.64rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--gold-deep); margin-bottom: 0.1rem; }
+    .btn-mini.active { background: var(--oak); border-color: var(--oak); color: var(--parchment); }
+
+    #status { left: 0.8rem; bottom: 0.8rem; font-size: 0.8rem; color: var(--ink-soft); max-width: 30rem; }
+    #hover-zone { left: 0.8rem; bottom: 3.4rem; font-size: 0.8rem; color: var(--gold-deep); letter-spacing: 0.06em; min-height: 1em; border: none; background: transparent; box-shadow: none; padding: 0 0.2rem; }
+    #top-actions[hidden], #catalog[hidden] { display: none; }
+    #top-actions[hidden], #catalog[hidden] { display: none; }
+
+    #notice {
+      left: 50%; bottom: 3rem; transform: translateX(-50%);
+      background: var(--ink); color: var(--parchment);
+      font-size: 0.9rem; padding: 0.55rem 1.1rem; border-radius: 4px;
+      opacity: 0; transition: opacity 0.4s ease; pointer-events: none;
+      max-width: min(38rem, calc(100vw - 2rem)); text-align: center;
+    }
+    #notice.show { opacity: 1; }
+
+    /* ---- threshold ---- */
+    #workshop-threshold {
+      position: fixed; inset: 0; z-index: 30; display: grid; place-items: center;
+      background: radial-gradient(120% 90% at 50% 10%, rgba(255,255,252,0.6), transparent 60%), var(--parchment);
+      transition: opacity 0.5s ease;
+    }
+    #workshop-threshold.gone { opacity: 0; pointer-events: none; }
+    .threshold-card { max-width: 34rem; margin: 1rem; padding: 2rem 2.2rem; text-align: center; }
+    .threshold-card h1 { font-size: 1.7rem; }
+    .threshold-card .sub { color: var(--gold-deep); letter-spacing: 0.26em; text-transform: uppercase; font-size: 0.74rem; margin: 0.4rem 0 0.9rem; }
+    .threshold-card p { font-size: 0.95rem; color: var(--ink-soft); }
+    .threshold-card .how { text-align: left; font-size: 0.88rem; margin: 0.9rem 0; }
+    .threshold-card .how li { margin: 0.25rem 0; }
+
+    /* ---- top actions ---- */
+    #top-actions { top: 0.8rem; right: 0.8rem; }
+    .state-badge { font-size: 0.72rem; letter-spacing: 0.14em; border: 1px solid var(--gold); color: var(--gold-deep); border-radius: 999px; padding: 0.2em 0.85em; }
+    .sandbox-toggle { display: inline-flex; align-items: center; gap: 0.4em; font-size: 0.85rem; cursor: pointer; user-select: none; }
+    .sandbox-toggle input { accent-color: var(--oak); width: 14px; height: 14px; }
+    .btn-mini { font: inherit; font-size: 0.82rem; padding: 0.28em 0.75em; border: 1px solid var(--rule); background: transparent; border-radius: 3px; cursor: pointer; color: var(--ink); }
+    .btn-mini:hover { border-color: var(--gold); }
+    .btn-mini:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-mini.gold { border-color: var(--gold); color: var(--gold-deep); }
+
+    /* ---- catalog ---- */
+    #catalog {
+      top: 4.6rem; right: 0.8rem; bottom: 0.8rem; width: 15.5rem;
+      display: flex; flex-direction: column; align-items: stretch; gap: 0.4rem;
+      padding: 0.7rem 0.8rem; overflow: hidden;
+    }
+    #catalog h2 { font-size: 0.78rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--oak); margin: 0.2rem 0 0.1rem; }
+    #catalog-count { font-size: 0.75rem; color: var(--ink-faint); }
+    .catalog-scroll { overflow-y: auto; display: flex; flex-wrap: wrap; gap: 0.28rem; padding-bottom: 0.4rem; }
+    .cat-chip {
+      font: inherit; font-size: 0.78rem; padding: 0.16em 0.55em;
+      border: 1px solid var(--rule); border-radius: 999px; background: transparent;
+      cursor: pointer; color: var(--ink-soft); text-align: left;
+    }
+    .cat-chip:hover { border-color: var(--gold); color: var(--ink); }
+    .cat-chip.active { background: var(--oak); border-color: var(--oak); color: var(--parchment); }
+
+    /* ---- placing hint + verdict ---- */
+    #place-hint {
+      left: 50%; bottom: 5.4rem; transform: translateX(-50%);
+      flex-direction: column; align-items: center; gap: 0.3rem;
+      max-width: min(40rem, calc(100vw - 2rem)); text-align: center;
+    }
+    #place-hint[hidden] { display: none; }
+    #verdict-chip { font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.18em 0.8em; border-radius: 999px; border: 1px solid var(--gold); color: var(--gold-deep); }
+    #verdict-chip[data-verdict="warned"] { border-color: var(--gold); background: rgba(197,160,89,0.14); }
+    #verdict-chip[data-verdict="allowed"] { border-color: var(--oak); background: rgba(45,74,62,0.1); color: var(--oak); }
+    #verdict-chip[data-verdict="forbidden"] { border-color: var(--ink); background: var(--ink); color: var(--parchment); }
+    #verdict-text { font-size: 0.85rem; color: var(--ink-soft); }
+
+    /* ---- item controls ---- */
+    #item-controls { left: 50%; bottom: 0.8rem; transform: translateX(-50%); }
+    #item-controls[hidden] { display: none; }
+    #item-controls-label { font-size: 0.85rem; color: var(--ink-soft); }
+
+    /* ---- overlays (ritual placeholder, summary, codex-return) ---- */
+    .overlay { position: fixed; inset: 0; z-index: 25; display: grid; place-items: center; background: rgba(17, 15, 10, 0.35); }
+    .overlay[hidden] { display: none; }
+    .overlay .card { max-width: 44rem; width: calc(100vw - 2rem); max-height: calc(100vh - 3rem); overflow: auto; padding: 1.4rem 1.6rem; }
+    .overlay h2 { font-size: 1.3rem; margin-bottom: 0.3rem; }
+    .overlay .sub { color: var(--gold-deep); font-size: 0.7rem; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 0.7rem; }
+    #summary-img { width: 100%; border: 1px solid var(--rule); border-radius: 4px; margin: 0.5rem 0; }
+    #summary-list { margin: 0.4rem 0 0.9rem; padding-left: 1.2rem; font-size: 0.9rem; }
+    #summary-list li { margin: 0.35rem 0; }
+    .summary-note { color: var(--ink-faint); font-size: 0.82rem; }
+    .overlay-actions { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+
+    #fatal { position: fixed; inset: 0; z-index: 40; display: none; place-items: center; background: var(--parchment); }
+    #fatal .card { max-width: 30rem; padding: 1.6rem 1.8rem; text-align: center; }
+    @media (prefers-reduced-motion: reduce) { #notice { transition: none; } }
+    @media (max-width: 900px) { #catalog { display: none; } }
+  </style>
+</head>
+<body>
+  <canvas id="scene" aria-label="The ritual room and altar workshop"></canvas>
+
+  <div id="controls" class="hud">
+    <div>
+      <h1>The Workshop</h1>
+      <div class="sub">altar builder</div>
+    </div>
+    <label>light
+      <select id="sel-light" aria-label="Lighting preset">
+        <option value="daylight">daylight</option>
+        <option value="dusk" selected>dusk</option>
+        <option value="candlelight">candlelight</option>
+      </select>
+    </label>
+    <label>quality
+      <select id="sel-tier" aria-label="Quality tier">
+        <option value="auto">auto</option>
+        <option value="museum">museum</option>
+        <option value="gallery">gallery</option>
+        <option value="plate">plate</option>
+      </select>
+    </label>
+  </div>
+
+  <div id="views" class="hud" hidden>
+    <span class="views-label">views</span>
+    <button class="btn-mini" data-view="room">room</button>
+    <button class="btn-mini" data-view="altar">altar</button>
+    <button class="btn-mini" data-view="hearth">hearth</button>
+    <button class="btn-mini" data-view="door">door</button>
+    <button class="btn-mini" data-view="pendant">pendant</button>
+  </div>
+
+  <div id="top-actions" class="hud" hidden>
+    <span id="state-badge" class="state-badge">THRESHOLD</span>
+    <label class="sandbox-toggle" title="Sandbox: practice without ritual consequences">
+      <input type="checkbox" id="sandbox-toggle"> sandbox
+    </label>
+    <button id="btn-undo" class="btn-mini" title="Undo (Ctrl+Z)">↶ undo</button>
+    <button id="btn-redo" class="btn-mini" title="Redo (Ctrl+Y)">↷ redo</button>
+    <button id="btn-ritual" class="btn-mini" disabled>ritual</button>
+    <button id="btn-summary" class="btn-mini gold" disabled>summary</button>
+    <button id="btn-begin-anew" class="btn-mini">begin anew</button>
+    <a class="btn-mini" href="./codex.html" style="text-decoration:none">codex</a>
+    <span id="state-desc" style="font-size:0.75rem;color:var(--ink-faint);max-width:12rem"></span>
+  </div>
+
+  <div id="catalog" class="hud" hidden>
+    <h2>Library</h2>
+    <span id="catalog-count"></span>
+    <button id="btn-places" class="btn-mini" aria-pressed="false" title="Show every placeable spot in the room">show places</button>
+    <div class="catalog-scroll">
+      <div id="catalog-symbols" style="display:contents"></div>
+    </div>
+    <h2>Tools</h2>
+    <div class="catalog-scroll">
+      <div id="catalog-tools" style="display:contents"></div>
+    </div>
+    <button id="btn-cancel-placing" class="btn-mini" hidden>stop placing (Esc)</button>
+  </div>
+
+  <div id="hover-zone" class="hud" aria-hidden="true"></div>
+
+  <div id="place-hint" class="hud" hidden>
+    <span id="verdict-chip" hidden></span>
+    <span id="verdict-text"></span>
+    <span id="place-count-label" style="font-size:0.78rem;color:var(--ink-faint)">
+      placed: <span id="place-count">0</span> · shift-click places another of the same
+    </span>
+  </div>
+
+  <div id="item-controls" class="hud" hidden>
+    <span id="item-controls-label"></span>
+    <button id="btn-rot-l" class="btn-mini" title="Rotate left (R)">⟲</button>
+    <button id="btn-rot-r" class="btn-mini" title="Rotate right (Shift+R)">⟳</button>
+    <button id="btn-remove" class="btn-mini" title="Remove (Delete)">remove</button>
+    <button id="btn-deselect" class="btn-mini">done</button>
+  </div>
+
+  <div id="status" class="hud" aria-live="polite">preparing the room…</div>
+  <div id="notice" class="hud" role="status"></div>
+
+  <div id="workshop-threshold">
+    <div class="threshold-card card">
+      <h1>The Workshop</h1>
+      <p class="sub">Build an arrangement</p>
+      <p>
+        Choose signs and tools from the library and set them where they belong —
+        the room will share what convention says about each place before you commit.
+        Nothing here is graded; everything here is teachable.
+      </p>
+      <ul class="how">
+        <li>Pick an item from the library — the room <b>lights up every placeable spot</b> (toggle “show places” anytime).</li>
+        <li><b>Scroll / pinch to zoom</b>, <b>drag empty space to orbit</b>, <b>right-drag to pan</b>, or jump with the <b>views</b> panel.</li>
+        <li>Aim at a lit marker and click to place. <b>Shift-click</b> places another of the same.</li>
+        <li><b>Drag</b> a placed item to move it; <b>R</b> rotates, <b>Delete</b> removes, <b>Ctrl+Z</b> undoes.</li>
+        <li>Toggle <b>sandbox</b> to summarize a practice arrangement.</li>
+      </ul>
+      <button id="btn-enter-workshop" class="btn">Enter the workshop</button>
+    </div>
+  </div>
+
+  <div id="ritual-overlay" class="overlay" hidden>
+    <div class="card">
+      <div class="sub">Ritual Mode</div>
+      <h2>The steps are not yet written</h2>
+      <p>
+        Ritual Mode — guided steps, spoken guidance, and positional synthesized
+        sound — arrives in Phase 6. Everything you have arranged stands ready
+        and waiting; nothing will need to be rebuilt.
+      </p>
+      <div class="overlay-actions">
+        <button id="btn-ritual-back" class="btn">Back to the altar</button>
+        <a class="btn-ghost" href="./codex.html" style="text-decoration:none">Read the Codex while you wait</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="summary-overlay" class="overlay" hidden>
+    <div class="card">
+      <div class="sub">Summary — a record of what you made</div>
+      <h2>Your arrangement</h2>
+      <img id="summary-img" alt="Screenshot of your arrangement">
+      <ol id="summary-list"></ol>
+      <div class="overlay-actions">
+        <a id="btn-shot-png" class="btn" download="altar-arrangement.png">Keep the image</a>
+        <a id="btn-shot-json" class="btn-ghost" download="altar-arrangement.json" style="text-decoration:none">Keep the record (JSON)</a>
+        <button id="btn-ritual-back-2" class="btn-ghost">Back to the altar</button>
+        <a class="btn-ghost" href="./codex.html" style="text-decoration:none">To the Codex</a>
+      </div>
+    </div>
+  </div>
+
+  <div id="fatal">
+    <div class="card">
+      <h2>The room is dark</h2>
+      <p id="fatal-msg">
+        WebGL could not start here, so the room cannot be drawn. The Codex
+        remains fully usable.
+      </p>
+      <p><a href="./codex.html">Return to the Codex</a></p>
+    </div>
+  </div>
+
+  <script type="module" src="./src/ui/altar.js"></script>
+</body>
+</html>

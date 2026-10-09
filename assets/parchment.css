@@ -1,0 +1,265 @@
+/*
+ * assets/parchment.css — the shared theme for The Living Altar (v3).
+ *
+ * Palette (spec §5): parchment #F8F4EA · ink #111 · gold #C5A059 ·
+ * oak green #2D4A3E. Gold-on-parchment is used for ACCENTS only
+ * (rules, chips, focus rings, large numerals) — never body text — so
+ * small text keeps WCAG AA contrast. No red anywhere: severity and
+ * verdicts are expressed with ink, oak, and gold weight, not alarm color.
+ */
+
+:root {
+  --parchment: #f8f4ea;
+  --parchment-deep: #efe8d6;
+  --parchment-dim: #e7dfc9;
+  --ink: #111111;
+  --ink-soft: #3a3730;
+  --ink-faint: #6b6557;
+  --gold: #c5a059;
+  --gold-deep: #8a6c33; /* gold darkened for small accent text (AA on parchment) */
+  --oak: #2d4a3e;
+  --oak-soft: #3d5f50;
+  --rule: rgba(17, 17, 17, 0.16);
+  --rule-soft: rgba(17, 17, 17, 0.09);
+  --shadow: 0 1px 2px rgba(17, 17, 17, 0.12), 0 6px 18px rgba(17, 17, 17, 0.1);
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--serif);
+  color: var(--ink);
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgba(255, 255, 252, 0.55), transparent 60%),
+    radial-gradient(140% 110% at 50% 115%, rgba(160, 138, 92, 0.16), transparent 55%),
+    repeating-linear-gradient(0deg, rgba(17, 17, 17, 0.014) 0 1px, transparent 1px 3px),
+    var(--parchment);
+  min-height: 100vh;
+  line-height: 1.55;
+}
+
+h1,
+h2,
+h3 {
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+
+a {
+  color: var(--oak);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---- buttons ---------------------------------------------------------- */
+.btn,
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+  padding: 0.42em 1.05em;
+  border-radius: 3px;
+  border: 1px solid var(--oak);
+  cursor: pointer;
+  letter-spacing: 0.02em;
+}
+
+.btn {
+  background: var(--oak);
+  color: var(--parchment);
+}
+
+.btn:hover {
+  background: var(--oak-soft);
+}
+
+.btn[disabled],
+.btn-ghost[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--rule);
+}
+
+.btn-ghost:hover {
+  border-color: var(--ink-faint);
+}
+
+/* ---- chips ------------------------------------------------------------ */
+.chip {
+  display: inline-block;
+  font-size: 0.72rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 0.14em 0.6em;
+  border: 1px solid var(--gold);
+  border-radius: 999px;
+  color: var(--gold-deep);
+  background: transparent;
+  white-space: nowrap;
+}
+
+.chip-solid {
+  background: var(--oak);
+  border-color: var(--oak);
+  color: var(--parchment);
+}
+
+.chip-ink {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--parchment);
+}
+
+.chip-outline {
+  border-color: var(--rule);
+  color: var(--ink-faint);
+}
+
+/* ---- cards ------------------------------------------------------------ */
+.card {
+  background: var(--parchment);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  box-shadow: var(--shadow);
+}
+
+/* ---- context boxes (parity / concerns / cautions) ---------------------- */
+.context-box {
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--oak);
+  background: var(--parchment-deep);
+  border-radius: 3px;
+  padding: 0.7rem 0.9rem;
+  margin: 0.8rem 0;
+}
+
+.context-box > h4 {
+  margin: 0 0 0.3rem;
+  font-size: 0.74rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--oak);
+}
+
+.context-box p {
+  margin: 0.25rem 0;
+  font-size: 0.93rem;
+}
+
+.context-box.gold-rule {
+  border-left-color: var(--gold);
+}
+
+.context-box.gold-rule > h4 {
+  color: var(--gold-deep);
+}
+
+.context-box ul {
+  margin: 0.25rem 0 0.1rem;
+  padding-left: 1.1rem;
+  font-size: 0.93rem;
+}
+
+.context-box li + li {
+  margin-top: 0.3rem;
+}
+
+/* ---- definition rows --------------------------------------------------- */
+.fields {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 0.25rem 0.9rem;
+  margin: 0.6rem 0;
+  font-size: 0.93rem;
+}
+
+.fields dt {
+  color: var(--ink-faint);
+  font-size: 0.72rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  padding-top: 0.18em;
+}
+
+.fields dd {
+  margin: 0;
+}
+
+/* ---- prose ------------------------------------------------------------- */
+.prose p {
+  margin: 0.55rem 0;
+  font-size: 0.97rem;
+}
+
+.prose h3 {
+  font-size: 0.78rem;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--oak);
+  margin: 1.1rem 0 0.3rem;
+}
+
+/* ---- toast -------------------------------------------------------------- */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 3.4rem;
+  transform: translateX(-50%) translateY(8px);
+  max-width: min(34rem, calc(100vw - 2rem));
+  background: var(--ink);
+  color: var(--parchment);
+  padding: 0.6rem 1.1rem;
+  border-radius: 4px;
+  font-size: 0.93rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease, transform 0.35s ease;
+  z-index: 60;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast {
+    transition: none;
+  }
+}

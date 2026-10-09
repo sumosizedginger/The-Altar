@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Debug — Symbol Grid · Symbols &amp; Sigils</title>
+  <meta name="robots" content="noindex" />
+  <script type="importmap">
+    { "imports": { "three": "./vendor/three/three.module.js" } }
+  </script>
+  <style>
+    :root {
+      --parchment: #F8F4EA;
+      --ink: #111;
+      --gold: #C5A059;
+      --oak: #2D4A3E;
+      --timber: #201812;
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--timber); }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1000px 500px at 50% -10%, rgba(197,160,89,0.14), transparent 60%),
+        var(--timber);
+      padding: 1.5rem 1rem 4rem;
+    }
+    header { max-width: 1280px; margin: 0 auto 1rem; color: var(--parchment); }
+    header h1 { margin: 0; font-size: 1.25rem; letter-spacing: 0.02em; }
+    header p { margin: 0.3rem 0 0; font-size: 0.85rem; color: rgba(248,244,234,0.75); }
+    header .gold-rule { border: 0; border-top: 2px solid var(--gold); width: 96px; margin: 0.6rem 0 0; }
+    #status {
+      max-width: 1280px; margin: 0 auto 1rem; padding: 0.5rem 0.8rem;
+      background: rgba(248,244,234,0.92); border-radius: 4px; font-size: 0.8rem;
+    }
+    #grid {
+      position: relative;
+      max-width: 1280px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+      gap: 14px;
+    }
+    #glcanvas {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 3; /* above parchment (cells are opaque), clicks pass through */
+    }
+    .cell {
+      position: relative;
+      background: var(--parchment);
+      border-radius: 6px;
+      box-shadow: 0 8px 22px rgba(0,0,0,0.35), inset 0 0 0 1px rgba(17,17,17,0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      z-index: 2;
+    }
+    .cell .meta {
+      display: flex; align-items: baseline; gap: 0.4rem; flex-wrap: wrap;
+      padding: 0.5rem 0.65rem 0.2rem;
+      font-size: 0.72rem;
+    }
+    .cell .meta .id { font-weight: bold; font-size: 0.8rem; }
+    .cell .meta .trad { color: var(--oak); }
+    .cell .meta .anim {
+      margin-left: auto; padding: 0.05rem 0.4rem; border: 1px solid rgba(17,17,17,0.25);
+      border-radius: 999px; font-size: 0.66rem;
+    }
+    .cell .stage { position: relative; height: 210px; }
+    .cell .pending {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      color: rgba(17,17,17,0.45); font-size: 0.78rem; font-style: italic; padding: 1rem; text-align: center;
+    }
+    .cell .controls {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.35rem 0.65rem 0.55rem;
+      font-size: 0.7rem;
+    }
+    .cell button {
+      font: inherit; font-size: 0.72rem; cursor: pointer;
+      background: var(--oak); color: var(--parchment);
+      border: none; border-radius: 3px; padding: 0.25rem 0.7rem;
+    }
+    .cell button:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+    .cell button:disabled { opacity: 0.5; cursor: default; }
+    .cell .state { color: rgba(17,17,17,0.55); }
+    #context-lost {
+      display: none; position: fixed; inset: auto 1rem 1rem 1rem; z-index: 9;
+      background: #fff8e6; border: 1px solid var(--gold); padding: 0.8rem 1rem; border-radius: 6px;
+      font-size: 0.85rem;
+    }
+    a.back { color: var(--gold); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Debug — Symbol Grid <small>(Phase 2)</small></h1>
+    <p>One WebGL context renders all 40 symbols via scissored viewports. Max 8 animate at once;
+       off-screen cells pause; reduced motion shows final frames. <a class="back" href="./index.html">← codex preview</a></p>
+    <hr class="gold-rule" />
+  </header>
+  <div id="status" role="status" aria-live="polite">Loading dataset…</div>
+  <div id="grid" aria-label="Symbol debug grid"></div>
+  <div id="context-lost">The WebGL context was lost. Attempting to restore…</div>
+
+  <script type="module" src="./src/debug/grid.js"></script>
+</body>
+</html>
