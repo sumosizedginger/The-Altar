@@ -16,6 +16,7 @@ import { initBuilder } from "../src/ui/builder.js";
 import { createTextureFactory } from "../src/scene/textures.js";
 import { buildRoom } from "../src/scene/room.js";
 import { SYMBOLS_BY_ID } from "../data/symbols.js";
+import { buildItem } from "../src/engine/props.js";
 
 let passed = 0;
 const section = (n) => console.log(`\n— ${n}`);
@@ -245,6 +246,31 @@ ok("placing a forbidden pairing refuses gently — nothing breaks", () => {
   click(p.x, p.y);
   assert.equal(builder.arrangement.size(), 1, "forbidden placement refused");
   assert.ok(notices.some((n) => /floor/i.test(n) && /place|convention|not its place/i.test(n)), `gentle refusal: ${notices.at(-1)}`);
+});
+
+
+ok("plaque wraps its strokes: no stray black disc beside the symbol", () => {
+  // Regression: scaling the instance group (which carries the baked-in
+  // centering offset) shoved the strokes ~0.29 off the brass disc, and the
+  // bare-metal disc rendered as a black dot at dusk. The plaque must be one
+  // centered object: strokes inside the disc, disc warm and shadow-free.
+  for (const mount of ["wall", "stand", "worn"]) {
+    const plaque = buildItem("symbol", SYMBOLS_BY_ID["pentacle"], { mount });
+    plaque.group.updateMatrixWorld(true);
+    const box = new THREE.Box3();
+    for (const st of plaque.instance.strokes) box.expandByObject(st.mesh);
+    const center = new THREE.Vector3();
+    box.getCenter(center);
+    assert.ok(center.length() < 0.05, `${mount}: strokes centered on the disc (got ${center.toArray().map((v) => v.toFixed(3))})`);
+    const sphere = new THREE.Sphere();
+    box.getBoundingSphere(sphere);
+    const discR = mount === "worn" ? 0.13 : 0.27;
+    assert.ok(sphere.radius <= discR + 0.01, `${mount}: strokes fit inside the disc (r ${sphere.radius.toFixed(3)} ≤ ${discR})`);
+    const disc = plaque.group.children.find((o) => o.isMesh && o.geometry?.type === "CylinderGeometry");
+    assert.ok(disc, `${mount}: plaque has a disc`);
+    assert.equal(disc.castShadow, false, `${mount}: disc never shadows its own wall`);
+    assert.ok(disc.material.emissiveIntensity > 0, `${mount}: disc carries a warm emissive floor (no black-void metal)`);
+  }
 });
 
 console.log(`\nRESULT: PASS — ${passed} workshop integration checks green\n`);

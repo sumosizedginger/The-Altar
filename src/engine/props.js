@@ -18,8 +18,10 @@ import * as THREE from "three";
 import { SymbolInstance } from "./symbolRenderer.js";
 
 const MAT = {
-  brass: new THREE.MeshStandardMaterial({ color: 0xb08d4f, roughness: 0.32, metalness: 0.85 }),
-  pewter: new THREE.MeshStandardMaterial({ color: 0x9a938a, roughness: 0.4, metalness: 0.7 }),
+  // Candlelit-room brass: with no environment map, bare high-metalness
+  // surfaces read as black voids at dusk — carry a warm emissive floor.
+  brass: new THREE.MeshStandardMaterial({ color: 0xb08d4f, roughness: 0.42, metalness: 0.6, emissive: 0x2a1f0c, emissiveIntensity: 0.5 }),
+  pewter: new THREE.MeshStandardMaterial({ color: 0x9a938a, roughness: 0.48, metalness: 0.55, emissive: 0x14120e, emissiveIntensity: 0.35 }),
   iron: new THREE.MeshStandardMaterial({ color: 0x3d3a35, roughness: 0.55, metalness: 0.6 }),
   wood: new THREE.MeshStandardMaterial({ color: 0x6f5638, roughness: 0.6, metalness: 0.05 }),
   darkWood: new THREE.MeshStandardMaterial({ color: 0x4a3a26, roughness: 0.65, metalness: 0.05 }),
@@ -186,13 +188,16 @@ export function buildSymbolPlaque(symbol, { mount = "stand", radius = 0.013 } = 
     MAT.brass,
   );
   disc.rotation.x = Math.PI / 2; // face +Z
+  disc.castShadow = false; // a wall plaque shadowing its own wall = acne + blobs
   group.add(disc);
 
   const instance = new SymbolInstance(symbol, { radius });
-  instance.group.scale.setScalar(mount === "worn" ? 0.2 : 0.42);
-  instance.group.position.z = mount === "wall" ? 0.012 : 0.014;
-  instance.group.rotation.y = 0;
-  group.add(instance.group);
+  const holder = new THREE.Group(); // wrapper owns the plaque scale — the
+  // instance group keeps its centering offset and stays free for behaviors
+  holder.scale.setScalar(mount === "worn" ? 0.2 : 0.42);
+  holder.position.z = mount === "wall" ? 0.012 : 0.014;
+  holder.add(instance.group);
+  group.add(holder);
 
   if (mount === "stand") {
     const foot = mesh(new THREE.CylinderGeometry(0.11, 0.13, 0.02, 18), MAT.darkWood, 0, 0.01, -0.02);
