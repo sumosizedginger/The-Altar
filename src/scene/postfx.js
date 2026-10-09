@@ -17,6 +17,9 @@
 import * as THREE from "three";
 
 const VERT = /* glsl */ `
+precision highp float;
+attribute vec3 position; // RawShaderMaterial injects nothing — declare built-ins
+attribute vec2 uv;
 varying vec2 vUv;
 void main() {
   vUv = uv;
@@ -25,6 +28,7 @@ void main() {
 `;
 
 const BRIGHT_FRAG = /* glsl */ `
+precision highp float;
 varying vec2 vUv;
 uniform sampler2D tex;
 uniform float threshold;
@@ -37,6 +41,7 @@ void main() {
 `;
 
 const BLUR_FRAG = /* glsl */ `
+precision highp float;
 varying vec2 vUv;
 uniform sampler2D tex;
 uniform vec2 dir; // texel-sized direction
@@ -49,6 +54,7 @@ void main() {
 `;
 
 const COMPOSITE_FRAG = /* glsl */ `
+precision highp float;
 varying vec2 vUv;
 uniform sampler2D sceneTex;
 uniform sampler2D bloomTex;

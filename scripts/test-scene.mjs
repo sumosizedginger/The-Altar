@@ -5,11 +5,13 @@
  * Run via `npm test`.
  */
 import assert from "node:assert/strict";
+import { readFileSync, readdirSync, statSync } from "node:fs";
 import * as THREE from "three";
 import { createTextureFactory, seedFromId, mulberry32 } from "../src/scene/textures.js";
 import { buildRoom, bearingToDirection, ROOM_DIMS } from "../src/scene/room.js";
 import { createLightingRig, LIGHT_PRESETS } from "../src/scene/lighting.js";
 import { TIERS, QUALITY_SETTINGS, detectTier, stepTier, FpsProbe } from "../src/scene/quality.js";
+
 
 let passed = 0;
 const section = (name) => console.log(`\n— ${name}`);
@@ -281,6 +283,27 @@ ok("FpsProbe reports below-threshold once, then stays silent", () => {
   const probe2 = new FpsProbe({ windowFrames: 10, threshold: 50, onResult: (r) => results.push(r) });
   for (let i = 0; i < 10; i++) probe2.push(0.5);
   assert.equal(results[1].belowThreshold, true, "slow machine flags");
+});
+
+
+ok("RawShaderMaterial sources carry explicit declarations (r160 injects nothing)", () => {
+  // Regression gate: RawShaderMaterial does NOT auto-inject attribute
+  // declarations or fragment precision — the 2026-10 black-room bug.
+  const files = [];
+  const walk = (dir) => {
+    for (const e of readdirSync(dir)) {
+      const full = `${dir}/${e}`;
+      statSync(full).isDirectory() ? walk(full) : files.push(full);
+    }
+  };
+  walk(new URL("../src", import.meta.url).pathname);
+  for (const f of files) {
+    const src = readFileSync(f, "utf8");
+    if (!src.includes("RawShaderMaterial")) continue;
+    assert.ok(src.includes("precision highp float;"), `${f}: float precision declared`);
+    assert.ok(/attribute\s+vec3\s+position\s*;/.test(src), `${f}: position attribute declared`);
+    assert.ok(/attribute\s+vec2\s+uv\s*;/.test(src), `${f}: uv attribute declared`);
+  }
 });
 
 console.log(`\nRESULT: PASS — ${passed} scene checks green\n`);
