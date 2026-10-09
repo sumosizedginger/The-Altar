@@ -17,6 +17,8 @@ import { createTextureFactory } from "../src/scene/textures.js";
 import { buildRoom } from "../src/scene/room.js";
 import { SYMBOLS_BY_ID } from "../data/symbols.js";
 import { buildItem } from "../src/engine/props.js";
+import { RitualRunner } from "../src/engine/ritual.js";
+import { RITUALS } from "../data/rituals.js";
 
 let passed = 0;
 const section = (n) => console.log(`\n— ${n}`);
@@ -284,6 +286,44 @@ ok("plaque wraps its strokes: no stray black disc beside the symbol", () => {
     assert.ok(!Object.is(ink, twin.instance.strokes[0].mesh.material), `${mount}: ink is per-plaque (behaviors mutate it in place)`);
     twin.instance.dispose();
   }
+});
+
+
+ok("mid-ritual prompt-place: cloth and candle land, steps complete, ritual resumes", () => {
+  // Regression: the ritual's "place X from the library" button armed the
+  // placing mode but the machine stayed in RITUAL, whose commit path only
+  // accepts PLACING/BUILDING — so the cloth and candle could never be set
+  // down and the first ritual dead-ended at step 1.
+  machine.transition("BUILDING");
+  machine.transition("RITUAL");
+  const runner = new RitualRunner({ ritual: RITUALS[0], arrangement: builder.arrangement, bus: app.bus });
+  assert.equal(runner.step.id, "ots-1-cloth", "first ritual, first step is the cloth");
+  assert.equal(machine.can("PLACING"), true, "RITUAL → PLACING edge exists");
+  // the center holds two and the gate-4 pentacle stands there — it steps
+  // aside (also keeps its plaque from occluding the surface ray)
+  const [firstUid] = builder.arrangement.items.keys();
+  builder.arrangement.remove(firstUid);
+  machine.transition("PLACING"); // what the prompt-place button now does
+  builder.setPlacingTool("cloth");
+  const center = project(0, 1.09, -4.55);
+  click(center.x, center.y);
+  assert.equal(builder.arrangement.size(), 1, "cloth placed during the ritual");
+  assert.equal(machine.state, "BUILDING", "commit lands in BUILDING");
+  assert.equal(machine.can("RITUAL"), true, "PLACING → RITUAL edge exists for the resume");
+  machine.transition("RITUAL");
+  assert.equal(runner.requirements().missing.includes("cloth"), false, "the step sees the cloth");
+  assert.equal(runner.attempt("click").ok, true, "clicking the cloth completes step 1");
+  assert.equal(runner.step.id, "ots-2-flame", "advanced to the flame step");
+
+  machine.transition("PLACING");
+  builder.setPlacingTool("candle");
+  click(center.x, center.y);
+  assert.equal(builder.arrangement.size(), 2, "candle placed during the ritual");
+  assert.equal(machine.state, "BUILDING", "commit lands in BUILDING again");
+  machine.transition("RITUAL");
+  assert.equal(runner.requirements().missing.includes("candle"), false, "the step sees the candle");
+  assert.equal(runner.attempt("click").ok, true, "clicking the candle lights step 2");
+  assert.equal(runner.step.id, "ots-3-sound", "advanced to the sound step");
 });
 
 console.log(`\nRESULT: PASS — ${passed} workshop integration checks green\n`);

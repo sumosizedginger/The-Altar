@@ -285,8 +285,12 @@ window.addEventListener("error", (e) => {
   if (e?.message) notice("Something slipped — the room caught it. If a panel looks stuck, reloading is safe.");
 });
 
-$("btn-ritual-back").addEventListener("click", () => app.machine.transition("BUILDING"));
-$("btn-ritual-back-2").addEventListener("click", () => app.machine.transition("BUILDING"));
+$("btn-ritual-back").addEventListener("click", () => {
+  if (app.machine.state === "RITUAL") app.machine.transition("BUILDING"); // guarded: ritual.js also wires this button
+});
+$("btn-ritual-back-2").addEventListener("click", () => {
+  if (app.machine.state === "RITUAL") app.machine.transition("BUILDING");
+});
 
 /* named views: framed sightlines, one click each */
 for (const btn of document.querySelectorAll("#views [data-view]")) {

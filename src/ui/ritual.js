@@ -224,7 +224,13 @@ export function initRitual({ app, builder, audio, camera, notice }) {
 
   /* ---- wiring ----------------------------------------------------------------------------- */
   $("btn-ritual").addEventListener("click", () => {
-    if (machine.state !== "RITUAL") machine.transition("RITUAL");
+    if (machine.state !== "RITUAL" && !machine.transition("RITUAL")) return;
+    if (runner && !runner.finished) {
+      // a ritual is mid-flight — resume the current step, never restart it
+      $("ritual-console").hidden = false;
+      renderStep();
+      return;
+    }
     lastRecord = null;
     runner = null;
     openPicker();
@@ -244,16 +250,31 @@ export function initRitual({ app, builder, audio, camera, notice }) {
   $("ritual-place-one").addEventListener("click", (e) => {
     const toolId = e.target.dataset.tool;
     const tool = TOOLS_BY_ID[toolId];
-    if (tool) builder.setPlacingTool(toolId);
-    notice(`${tool?.name ?? toolId} is in your hand — set it down where the step asks.`);
+    if (!tool) return;
+    // the machine must actually leave RITUAL for the commit path to accept
+    // the click — this edge is the whole difference between armed and dead
+    if (machine.state === "RITUAL") machine.transition("PLACING");
+    builder.setPlacingTool(toolId);
+    notice(`${tool.name} is in your hand — set it down where the step asks.`);
   });
 
   document.addEventListener("pointerdown", onPointerDown);
   document.addEventListener("pointermove", onPointerMove);
   document.addEventListener("pointerup", onPointerUp);
 
-  bus.on(EVENTS.STATE_CHANGE, () => {
-    if (machine.state !== "RITUAL") closeAll();
+  bus.on(EVENTS.STATE_CHANGE, ({ from, to } = {}) => {
+    if (machine.state === "RITUAL") {
+      if (runner && !runner.finished && to === "RITUAL") {
+        $("ritual-console").hidden = false;
+        renderStep(); // back mid-flight: show the step we were on
+      }
+      return;
+    }
+    closeAll();
+    // the ritual's own placement just committed — resume the step
+    if (runner && !runner.finished && from === "PLACING" && to === "BUILDING") {
+      machine.transition("RITUAL");
+    }
   });
 
   return {

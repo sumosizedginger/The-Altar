@@ -61,13 +61,13 @@ const REFUSAL_COPY = Object.freeze({
 const TRANSITIONS = Object.freeze({
   THRESHOLD: [{ to: "CODEX" }],
   CODEX: [{ to: "THRESHOLD" }, { to: "PLACING" }],
-  PLACING: [{ to: "CODEX" }, { to: "BUILDING" }],
+  PLACING: [{ to: "CODEX" }, { to: "BUILDING" }, { to: "RITUAL" }], // resume a mid-flight ritual
   BUILDING: [
     { to: "PLACING" },
     { to: "RITUAL", guard: (m) => (m.sandbox ? "sandbox-no-ritual" : true) },
     { to: "SUMMARY", guard: (m) => (m.sandbox ? true : "summary-needs-ritual") },
   ],
-  RITUAL: [{ to: "BUILDING" }, { to: "SUMMARY" }],
+  RITUAL: [{ to: "BUILDING" }, { to: "SUMMARY" }, { to: "PLACING" }], // a step may ask for an object to be placed
   SUMMARY: [{ to: "CODEX" }, { to: "THRESHOLD" }],
 });
 

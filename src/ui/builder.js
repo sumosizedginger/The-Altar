@@ -725,7 +725,6 @@ export function initBuilder(handles) {
   $("btn-deselect").addEventListener("click", cancelSelection);
   $("btn-cancel-placing").addEventListener("click", cancelPlacing);
   $("btn-summary").addEventListener("click", () => machine.transition("SUMMARY"));
-  $("btn-ritual").addEventListener("click", () => machine.transition("RITUAL"));
   $("btn-begin-anew").addEventListener("click", () => {
     arrangement.clear();
     machine.reset();
