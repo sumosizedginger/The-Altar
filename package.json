@@ -6,7 +6,7 @@
   "private": true,
   "scripts": {
     "validate": "node data/validate.js",
-    "test": "node scripts/test-imports.mjs && node scripts/test-core.mjs && node scripts/test-scene.mjs && node scripts/test-builder.mjs && node scripts/test-ritual.mjs",
+    "test": "node scripts/test-imports.mjs && node scripts/test-core.mjs && node scripts/test-scene.mjs && node scripts/test-builder.mjs && node scripts/test-ritual.mjs && node scripts/test-workshop.mjs",
     "start": "node scripts/dev-server.mjs 8000"
   },
   "engines": {

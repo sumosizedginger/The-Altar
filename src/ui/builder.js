@@ -255,8 +255,9 @@ export function initBuilder(handles) {
     bus.emit(EVENTS.BUILDER_MODE, { mode: "placing-item" });
     $("place-hint").hidden = false;
     $("btn-cancel-placing").hidden = false;
-    $("place-hint").textContent = `Placing: ${data.name} — aim at a surface. The room will tell you what convention says before you commit.`;
+    $("place-hint").textContent = `Placing: ${data.name} — aim at a lit marker and click. The room will tell you what convention says before you commit.`;
     highlightCatalogChip(kind, data.id);
+    updateMarkersVisibility();
   }
 
   function destroyGhost() {
@@ -273,6 +274,8 @@ export function initBuilder(handles) {
     destroyGhost();
     $("place-hint").hidden = true;
     $("btn-cancel-placing").hidden = true;
+    setMarkerHover(null);
+    updateMarkersVisibility();
     highlightCatalogChip(null, null);
     bus.emit(EVENTS.BUILDER_MODE, { mode: machine.state === "PLACING" ? "placing" : "building" });
   }
@@ -361,7 +364,7 @@ export function initBuilder(handles) {
       if (hit?.type === "zone") {
         if (hit.zone !== ghostZone) buildGhostFor(hit.zone);
         const anchor = zoneAnchor(hit.zone, hit.hit);
-        const p = new THREE.Vector3(hit.point.x, anchor.y, hit.point.z);
+        const p = new THREE.Vector3(hit.hit.point.x, anchor.y, hit.hit.point.z);
         if (anchor.wall) applyWallOffset(p, anchor.wall);
         ghost.group.position.copy(p);
         ghost.group.rotation.y = anchor.rotationY;
@@ -407,7 +410,7 @@ export function initBuilder(handles) {
         drag.pending = {
           zoneId: hit.zone,
           position: (() => {
-            const p = new THREE.Vector3(hit.point.x, anchor.y, hit.point.z);
+            const p = new THREE.Vector3(hit.hit.point.x, anchor.y, hit.hit.point.z);
             if (anchor.wall) applyWallOffset(p, anchor.wall);
             return { x: p.x, y: p.y, z: p.z };
           })(),
@@ -453,11 +456,12 @@ export function initBuilder(handles) {
     if (clickDist >= 6) return;
 
     if (mode.kind && ["PLACING", "BUILDING"].includes(machine.state)) {
-      // commit a placement
+      // commit a placement — judge the click's own hit, not whether a hover
+      // ghost happened to spawn (rules + capacity re-checked by the model)
       const hit = hitTest(e);
-      if (hit?.type === "zone" && ghostZone === hit.zone) {
+      if (hit?.type === "zone") {
         const anchor = zoneAnchor(hit.zone, hit.hit);
-        const p = new THREE.Vector3(hit.point.x, anchor.y, hit.point.z);
+        const p = new THREE.Vector3(hit.hit.point.x, anchor.y, hit.hit.point.z);
         if (anchor.wall) applyWallOffset(p, anchor.wall);
         const result = arrangement.place({
           kind: mode.kind,

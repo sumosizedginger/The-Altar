@@ -62,6 +62,10 @@ export function createCameraRig({ camera, dom, reducedMotion = false }) {
   const pointers = new Map(); // pointerId -> {x,y}
   let lastX = 0;
   let lastY = 0;
+  let downX = 0;
+  let downY = 0;
+  let movedSinceDown = 0;
+  const DRAG_DEAD_ZONE = 4; // px — a press that moves less is a click, not a gesture
   let pinchDist = 0;
   let pinchMid = { x: 0, y: 0 };
 
@@ -129,6 +133,9 @@ export function createCameraRig({ camera, dom, reducedMotion = false }) {
     gesture = e.button === 2 || e.ctrlKey || e.metaKey ? "pan" : "rotate";
     lastX = e.clientX;
     lastY = e.clientY;
+    downX = e.clientX;
+    downY = e.clientY;
+    movedSinceDown = 0;
     return true;
   }
 
@@ -151,6 +158,8 @@ export function createCameraRig({ camera, dom, reducedMotion = false }) {
     const dy = e.clientY - lastY;
     lastX = e.clientX;
     lastY = e.clientY;
+    movedSinceDown += Math.abs(dx) + Math.abs(dy);
+    if (movedSinceDown < DRAG_DEAD_ZONE) return true; // tiny jitter: not a gesture yet
     if (gesture === "pan") panBy(dx, dy);
     else rotateBy(dx, dy);
     return true;
@@ -204,6 +213,9 @@ export function createCameraRig({ camera, dom, reducedMotion = false }) {
     setView,
     get gesture() {
       return gesture;
+    },
+    get movedSinceDown() {
+      return movedSinceDown;
     },
     get active() {
       return gesture !== null;
