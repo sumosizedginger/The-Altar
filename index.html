@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Symbols &amp; Sigils — The Living Altar · Codex Preview</title>
+  <meta name="description" content="Phase 1 data preview: the 40-symbol codex, validated at startup." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='15' fill='%23F8F4EA'/%3E%3Ccircle cx='16' cy='16' r='12' fill='none' stroke='%23C5A059' stroke-width='1.6'/%3E%3Cpath d='M16 6.4 24.3 25.4 8.9 12.2h14.2L7.7 25.4Z' fill='none' stroke='%23C5A059' stroke-width='1.4'/%3E%3C/svg%3E">
+  <style>
+    /* Design tokens (spec §1): candlelit study, parchment panels. */
+    :root {
+      --parchment: #F8F4EA;
+      --ink: #111;
+      --gold: #C5A059;      /* Egyptian gold foil — accents only */
+      --oak: #2D4A3E;       /* Celtic oak green */
+      --timber: #201812;
+      --shadow: rgba(0, 0, 0, 0.35);
+    }
+    * { box-sizing: border-box; }
+    html { background: var(--timber); }
+    body {
+      margin: 0;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 50% -10%, rgba(197, 160, 89, 0.16), transparent 60%),
+        var(--timber);
+      min-height: 100vh;
+      padding: 2rem 1rem 4rem;
+    }
+    main { max-width: 1100px; margin: 0 auto; }
+    .panel {
+      background: var(--parchment);
+      color: var(--ink);
+      border-radius: 6px;
+      box-shadow: 0 10px 30px var(--shadow), inset 0 0 0 1px rgba(17, 17, 17, 0.08);
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+    h1 { font-size: 1.6rem; margin: 0 0 0.25rem; letter-spacing: 0.02em; }
+    h1 small { display: block; font-size: 0.85rem; font-weight: normal; color: rgba(17,17,17,0.65); margin-top: 0.3rem; }
+    h2 { font-size: 1.1rem; margin: 0 0 0.75rem; border-bottom: 1px solid rgba(17,17,17,0.15); padding-bottom: 0.35rem; }
+    .gold-rule { border: 0; border-top: 2px solid var(--gold); width: 96px; margin: 0.75rem 0 1rem; }
+    .verdict { font-weight: bold; }
+    .verdict.pass { color: var(--oak); }
+    .verdict.fail { color: #8a2f1f; }
+    .badge {
+      display: inline-block; padding: 0.1rem 0.5rem; border-radius: 999px;
+      font-size: 0.72rem; border: 1px solid rgba(17,17,17,0.25); margin-right: 0.35rem;
+      background: rgba(255,255,255,0.5);
+    }
+    .badge.open { border-color: var(--oak); color: var(--oak); }
+    .badge.contextual { border-color: var(--gold); color: #7c5c1e; }
+    .badge.unverified { border-color: #8a2f1f; color: #8a2f1f; }
+    ul.report { margin: 0.5rem 0 0; padding-left: 1.25rem; font-size: 0.85rem; line-height: 1.5; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; }
+    th, td { text-align: left; padding: 0.45rem 0.5rem; border-bottom: 1px solid rgba(17,17,17,0.12); vertical-align: top; }
+    th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: rgba(17,17,17,0.6); }
+    td.name { font-weight: bold; }
+    td.trad { white-space: nowrap; }
+    details summary { cursor: pointer; font-size: 0.8rem; color: var(--oak); }
+    p.meaning { margin: 0.35rem 0 0; font-size: 0.8rem; color: rgba(17,17,17,0.8); }
+    footer { text-align: center; color: rgba(248,244,234,0.55); font-size: 0.75rem; margin-top: 2rem; }
+    .note { font-size: 0.82rem; color: rgba(17,17,17,0.7); }
+    .counts { display: flex; gap: 1.25rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .count { background: rgba(45,74,62,0.08); border: 1px solid rgba(45,74,62,0.25); border-radius: 4px; padding: 0.4rem 0.7rem; }
+    .count b { display: block; font-size: 1.25rem; color: var(--oak); }
+    .count span { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="panel">
+      <h1>Symbols &amp; Sigils — The Living Altar
+        <small>Phase 1 · Codex data preview. The 3D altar arrives in later phases; this page proves the dataset loads, validates, and is honest.</small>
+      </h1>
+      <hr class="gold-rule" />
+      <div id="verdict">Validating dataset…</div>
+      <div class="counts" id="counts"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Validation report</h2>
+      <div id="report"><span class="note">Running…</span></div>
+    </div>
+
+    <div class="panel">
+      <h2>The 40 symbols</h2>
+      <p class="note" id="roster-note"></p>
+      <table aria-label="Symbol roster">
+        <thead>
+          <tr><th>Symbol</th><th>Tradition</th><th>Animation</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody id="roster"></tbody>
+      </table>
+    </div>
+
+    <footer>
+      All assets procedural · Three.js 0.160.1 pinned locally, import map, no bundler · local static server required ·
+      no invented citations, ever · <a style="color:#C5A059" href="./codex.html">open the Codex →</a> ·
+      <a style="color:#C5A059" href="./altar.html">the room</a> ·
+      <a style="color:#C5A059" href="./debug.html">symbol engine debug grid</a>
+    </footer>
+  </main>
+
+  <script type="module">
+    import { SYMBOLS } from "./data/symbols.js";
+    import { TOOLS } from "./data/tools.js";
+    import { ZONES } from "./data/zones.js";
+    import { RITUALS } from "./data/rituals.js";
+    import { SOURCES } from "./data/sources.js";
+    import { TRADITIONS } from "./data/traditions.js";
+    import { validateDataset } from "./data/schema.js";
+
+    const report = validateDataset({ symbols: SYMBOLS, tools: TOOLS, zones: ZONES, rituals: RITUALS, sources: SOURCES, traditions: TRADITIONS });
+
+    const verdictEl = document.getElementById("verdict");
+    const countsEl = document.getElementById("counts");
+    const reportEl = document.getElementById("report");
+
+    if (report.ok) {
+      verdictEl.innerHTML = `<span class="verdict pass">PASS</span> — dataset satisfies the Phase 1 schema (schema validation ran in-browser at startup).`;
+    } else {
+      verdictEl.innerHTML = `<span class="verdict fail">FAIL</span> — ${report.errors.length} error(s). See report.`;
+    }
+    countsEl.innerHTML = Object.entries(report.counts)
+      .map(([k, v]) => `<div class="count"><b>${v}</b><span>${k}</span></div>`)
+      .join("");
+
+    const lines = [];
+    const geometryPending = report.warnings.filter((w) => w.includes("G000")).length;
+    const otherWarnings = report.warnings.filter((w) => !w.includes("G000"));
+    if (report.errors.length) {
+      lines.push(`<strong>Errors</strong><ul class="report">${report.errors.map((e) => `<li>${e}</li>`).join("")}</ul>`);
+    }
+    if (geometryPending) lines.push(`<p class="note">Tracked: ${geometryPending} symbols awaiting Phase 2 geometry (tracked warning G000).</p>`);
+    if (otherWarnings.length) {
+      lines.push(`<strong>Warnings</strong><ul class="report">${otherWarnings.map((w) => `<li>${w}</li>`).join("")}</ul>`);
+    }
+    if (!lines.length) lines.push(`<span class="note">No errors. No warnings beyond tracked Phase 2 items.</span>`);
+    reportEl.innerHTML = lines.join("");
+
+    // Roster table
+    const tbody = document.getElementById("roster");
+    const tradLabel = (id) => TRADITIONS[id]?.name || id;
+    tbody.innerHTML = SYMBOLS.map((s) => `
+      <tr>
+        <td class="name">${s.name}</td>
+        <td class="trad">${s.traditions.map(tradLabel).join(" · ")}</td>
+        <td>${s.animationType}</td>
+        <td><span class="badge ${s.openStatus}">${s.openStatus}</span></td>
+        <td>
+          <details>
+            <summary>meaning &amp; honesty</summary>
+            <p class="meaning">${s.meaning}</p>
+            ${s.contested ? `<p class="meaning"><em>Contested:</em> ${s.competingInterpretations.join(" / ")}</p>` : ""}
+            ${s.caution ? `<p class="meaning"><em>Note:</em> ${s.caution}</p>` : ""}
+          </details>
+        </td>
+      </tr>`).join("");
+    document.getElementById("roster-note").textContent =
+      `${SYMBOLS.length} symbols · ${TOOLS.length} tools · ${ZONES.length} zones · ${RITUALS.length} rituals · ${SOURCES.length} sources`;
+  </script>
+</body>
+</html>

@@ -1,0 +1,241 @@
+/**
+ * data/rituals.js — guided ritual sequences (spec §6).
+ *
+ * These are generic, contemplative GUIDED SEQUENCES composed for this
+ * experience. They are not reconstructions of any lineage's liturgy and
+ * make no claim to be. Each step follows the Ritual Mode step schema:
+ *
+ *   id, instruction, action (click|trace|ring|pour|wait),
+ *   requiredObjects[], tolerance (for trace), hint {text, afterSec},
+ *   skipAllowed, missingObject (prompt-place|skip-with-note|suggest-substitute),
+ *   stateChanges[]
+ *
+ * There is no fail state: only hints. Sessions are restorable
+ * (restore: true on each ritual).
+ */
+
+export const RITUALS = [
+  {
+    id: "opening-the-space",
+    name: "Opening a Quiet Space",
+    description:
+      "A gentle sequence for setting an altar and marking a beginning: cloth, flame, sound, and a first breath of intention. Designed to be lineage-neutral.",
+    disclaimer:
+      "A guided contemplative sequence composed for this experience. It is not a reconstruction of any tradition's liturgy.",
+    estimatedMinutes: 6,
+    restore: true,
+    steps: [
+      {
+        id: "ots-1-cloth",
+        instruction: "Lay the altar cloth to define your working surface.",
+        action: "click",
+        requiredObjects: ["cloth"],
+        zone: "altar-center",
+        hint: { text: "Select the altar cloth from your placed tools, then click the altar's center.", afterSec: 20 },
+        skipAllowed: true,
+        missingObject: "prompt-place",
+        stateChanges: ["altar.surface=dressed"],
+      },
+      {
+        id: "ots-2-flame",
+        instruction: "Place a candle at the center and light it.",
+        action: "click",
+        requiredObjects: ["candle"],
+        zone: "altar-center",
+        hint: { text: "The flame catches when you click the candle. If you have no candle placed, the codex can place one for you.", afterSec: 25 },
+        skipAllowed: false,
+        missingObject: "prompt-place",
+        stateChanges: ["flame.lit=candle"],
+        caption: "A small flame steadies.",
+      },
+      {
+        id: "ots-3-sound",
+        instruction: "Ring the bell once to mark the edge of ordinary time.",
+        action: "ring",
+        requiredObjects: ["bell"],
+        hint: { text: "Click the bell to ring it. A singing bowl may stand in.", afterSec: 25 },
+        skipAllowed: true,
+        missingObject: "suggest-substitute",
+        substitutes: ["singing-bowl"],
+        stateChanges: ["sound.struck=once"],
+        caption: "One clear bell tone rings and fades.",
+      },
+      {
+        id: "ots-4-trace",
+        instruction:
+          "Trace the outline of your chosen symbol slowly with the pointer. Stay near the line; this is an act of attention, not precision.",
+        action: "trace",
+        requiredObjects: [],
+        requiresPlacedSymbol: true,
+        tolerance: 0.18,
+        hint: { text: "Follow the drawn line of your placed symbol. Speed does not matter; continuity does.", afterSec: 30 },
+        skipAllowed: true,
+        missingObject: "skip-with-note",
+        stateChanges: ["symbol.retraced=true"],
+        caption: "Your hand follows the symbol's remembered stroke order.",
+      },
+      {
+        id: "ots-5-breath",
+        instruction: "Rest. Watch the flame for three slow breaths.",
+        action: "wait",
+        waitSec: 12,
+        requiredObjects: [],
+        hint: { text: "Nothing to do here. The flame flickers; you breathe.", afterSec: 40 },
+        skipAllowed: true,
+        missingObject: "skip-with-note",
+        stateChanges: ["session.opened=true"],
+        caption: "The flame flickers softly. Dust drifts through its light.",
+      },
+    ],
+  },
+
+  {
+    id: "evening-flame",
+    name: "Evening Flame",
+    description:
+      "A short closing sequence: water, incense, a song of metal, and the flame let down. Suited to the day's end.",
+    disclaimer:
+      "A guided contemplative sequence composed for this experience. It is not a reconstruction of any tradition's liturgy.",
+    estimatedMinutes: 5,
+    restore: true,
+    steps: [
+      {
+        id: "ef-1-water",
+        instruction: "Set the water bowl where you can see the flame reflected in it.",
+        action: "click",
+        requiredObjects: ["water-bowl"],
+        zone: "altar-west",
+        hint: { text: "Place the water bowl, then click it to settle the water.", afterSec: 20 },
+        skipAllowed: true,
+        missingObject: "prompt-place",
+        stateChanges: ["water.settled=true"],
+        caption: "The water stills; the flame doubles.",
+      },
+      {
+        id: "ef-2-smoke",
+        instruction: "Let the incense rise. Watch where it goes.",
+        action: "click",
+        requiredObjects: ["incense-burner"],
+        hint: { text: "Click the censer to light it. The smoke remembers the room's air currents.", afterSec: 25 },
+        skipAllowed: true,
+        missingObject: "suggest-substitute",
+        substitutes: ["oil-lamp"],
+        stateChanges: ["smoke.rising=true"],
+        caption: "A ribbon of smoke climbs and wanders.",
+      },
+      {
+        id: "ef-3-bowl",
+        instruction: "Strike the singing bowl once and let it empty itself completely.",
+        action: "ring",
+        requiredObjects: ["singing-bowl"],
+        hint: { text: "Click the bowl. The tone is long; wait for true silence.", afterSec: 20 },
+        skipAllowed: true,
+        missingObject: "suggest-substitute",
+        substitutes: ["bell"],
+        stateChanges: ["bowl.emptied=true"],
+        caption: "A tone blooms, beats slowly, and thins into silence.",
+      },
+      {
+        id: "ef-4-trace",
+        instruction: "Trace your symbol one last time, ending where it began.",
+        action: "trace",
+        requiredObjects: [],
+        requiresPlacedSymbol: true,
+        tolerance: 0.2,
+        hint: { text: "A slower pass tonight. Close the loop where your first stroke started.", afterSec: 30 },
+        skipAllowed: true,
+        missingObject: "skip-with-note",
+        stateChanges: ["symbol.retraced=true"],
+        caption: "The stroke order replays beneath your hand.",
+      },
+      {
+        id: "ef-5-close",
+        instruction: "Extinguish the candle to close the working.",
+        action: "click",
+        requiredObjects: ["candle"],
+        hint: { text: "Click the flame to snuff it. Smoke will speak for a moment.", afterSec: 20 },
+        skipAllowed: false,
+        missingObject: "skip-with-note",
+        stateChanges: ["flame.lit=false", "session.closed=true"],
+        caption: "The flame bows out; a thread of smoke rises.",
+      },
+    ],
+  },
+
+  {
+    id: "four-quarters",
+    name: "Facing the Four Quarters",
+    description:
+      "A directional sequence using the elemental triangles and the quarter tools of Wiccan-style directional work. The codex presents the documented attributions (north–earth, east–air, south–fire, west–water) as convention, not commandment.",
+    disclaimer:
+      "Follows the documented quarter/element attributions of Wiccan and ceremonial practice as convention. It is a guided exercise, not an initiatory rite.",
+    estimatedMinutes: 8,
+    restore: true,
+    steps: [
+      {
+        id: "fq-1-north",
+        instruction: "Stand at the north quarter: place salt (earth) and face altar-north.",
+        action: "click",
+        requiredObjects: ["salt-dish"],
+        zone: "altar-north",
+        hint: { text: "Salt belongs to the north quarter in directional convention. Click the salt dish there.", afterSec: 25 },
+        skipAllowed: true,
+        missingObject: "prompt-place",
+        stateChanges: ["quarter.north=acknowledged"],
+        caption: "Earth: the quarter of stillness.",
+      },
+      {
+        id: "fq-2-east",
+        instruction: "Turn to the east quarter: raise the wand (air).",
+        action: "click",
+        requiredObjects: ["wand"],
+        zone: "altar-east",
+        hint: { text: "The wand holds the east quarter in directional convention.", afterSec: 25 },
+        skipAllowed: true,
+        missingObject: "suggest-substitute",
+        substitutes: ["feather"],
+        stateChanges: ["quarter.east=acknowledged"],
+        caption: "Air: the quarter of beginnings.",
+      },
+      {
+        id: "fq-3-south",
+        instruction: "Turn to the south quarter: kindle the candle (fire).",
+        action: "click",
+        requiredObjects: ["candle"],
+        zone: "altar-south",
+        hint: { text: "Fire holds the south quarter; light the candle there.", afterSec: 25 },
+        skipAllowed: false,
+        missingObject: "prompt-place",
+        stateChanges: ["quarter.south=acknowledged", "flame.lit=candle"],
+        caption: "Fire: the quarter of noon.",
+      },
+      {
+        id: "fq-4-west",
+        instruction: "Turn to the west quarter: pour into the chalice (water).",
+        action: "pour",
+        requiredObjects: ["chalice"],
+        zone: "altar-west",
+        hint: { text: "Click the chalice to pour. Water holds the west quarter.", afterSec: 25 },
+        skipAllowed: true,
+        missingObject: "suggest-substitute",
+        substitutes: ["water-bowl"],
+        stateChanges: ["quarter.west=acknowledged"],
+        caption: "Water: the quarter of dusk.",
+      },
+      {
+        id: "fq-5-center",
+        instruction: "Return to the center and wait for the quarters to settle around you.",
+        action: "wait",
+        waitSec: 10,
+        requiredObjects: [],
+        hint: { text: "The four acknowledgements made, the center is yours.", afterSec: 30 },
+        skipAllowed: true,
+        missingObject: "skip-with-note",
+        stateChanges: ["quarters.complete=true"],
+        caption: "Four directions held; the center breathes.",
+      },
+    ],
+  },
+];
+
+export const RITUAL_IDS = RITUALS.map((r) => r.id);
