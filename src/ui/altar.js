@@ -15,6 +15,10 @@ import { createTextureFactory } from "../scene/textures.js";
 import { buildRoom } from "../scene/room.js";
 import { createLightingRig } from "../scene/lighting.js";
 import { detectTier, QUALITY_SETTINGS, stepTier, FpsProbe } from "../scene/quality.js";
+import { createCameraRig } from "./cameraRig.js";
+import { createPostFX } from "../scene/postfx.js";
+import { createAudioEngine } from "../audio/audioEngine.js";
+import { initRitual } from "./ritual.js";
 import { initBuilder } from "./builder.js";
 
 const $ = (id) => document.getElementById(id);

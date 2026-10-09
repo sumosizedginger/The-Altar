@@ -1,12 +1,12 @@
 {
   "name": "the-altar-symbols-and-sigils",
   "version": "0.1.0",
-  "description": "Symbols & Sigils — The Living Altar. A museum-grade WebGL altar builder. Phase 1: data layer, schema, validator.",
+  "description": "Symbols & Sigils \u2014 The Living Altar. A museum-grade WebGL altar builder. Phase 1: data layer, schema, validator.",
   "type": "module",
   "private": true,
   "scripts": {
     "validate": "node data/validate.js",
-    "test": "node scripts/test-core.mjs && node scripts/test-scene.mjs && node scripts/test-builder.mjs && node scripts/test-ritual.mjs",
+    "test": "node scripts/test-imports.mjs && node scripts/test-core.mjs && node scripts/test-scene.mjs && node scripts/test-builder.mjs && node scripts/test-ritual.mjs",
     "start": "node scripts/dev-server.mjs 8000"
   },
   "engines": {
