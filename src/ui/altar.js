@@ -274,7 +274,10 @@ app.bus.on(EVENTS.STATE_CHANGE, () => {
   $("sandbox-toggle").disabled = !["PLACING", "BUILDING"].includes(st);
   $("btn-ritual").disabled = st !== "BUILDING";
   $("btn-summary").disabled = st !== "BUILDING";
-  $("ritual-overlay").hidden = st !== "RITUAL";
+  // NOTE: the ritual picker and console are owned by ritual.js (picker,
+  // console, mid-ritual resume). Forcing their visibility from state here
+  // reopens the picker over a running ritual whenever a placement steps
+  // the machine aside and back.
   $("summary-overlay").hidden = st !== "SUMMARY";
   $("state-desc").textContent = STATE_DESCRIPTION[st] ?? "";
   if (st === "SUMMARY") builder.renderSummary(ritualRef.current?.record ?? null);

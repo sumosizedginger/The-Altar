@@ -9,6 +9,7 @@
  * Run via `npm test`.
  */
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import * as THREE from "three";
 import { createApp } from "../src/core/app.js";
 import { createCameraRig } from "../src/ui/cameraRig.js";
@@ -334,7 +335,8 @@ ok("mid-ritual prompt-place: cloth and candle land, steps complete, ritual resum
 });
 
 
-/* ---- every ritual, walked end-to-end through the real UI ------------------ */
+
+/* ---- shared by the ritual walks: click targets per zone, console readout ---- */
 const ZONE_POINT = {
   "altar-center": [0, 1.099, -4.55],
   "altar-north": [0.45, 1.099, -4.9], // east side of the strip: center objects don't occlude the ray
@@ -342,6 +344,37 @@ const ZONE_POINT = {
   "altar-west": [-0.585, 1.099, -4.6],
   "altar-east": [0.585, 1.099, -4.6],
 };
+const stepNum = () => byId("ritual-step-num").textContent;
+
+ok("cancelling a mid-ritual placement resumes the same step", () => {
+  builder.arrangement.clear();
+  machine.reset();
+  machine.transition("CODEX"); machine.transition("PLACING"); machine.transition("BUILDING");
+  startRitualViaUI(0);
+  const btn = byId("ritual-place-one");
+  assert.equal(btn.hidden, false, "step 1 offers the cloth");
+  btn.listeners.click[0]({ target: btn });
+  assert.equal(machine.state, "PLACING", "stepped aside for the placement");
+  for (const fn of docListeners.keydown ?? []) fn({ key: "Escape" }); // put the hand down
+  assert.equal(machine.state, "RITUAL", "cancelling hands the machine back to the ritual");
+  assert.match(byId("ritual-step-num").textContent, /Step 1 of 5/, "the walk never lost its place");
+  // and the flow still completes from here
+  btn.listeners.click[0]({ target: btn });
+  const c = project(...ZONE_POINT["altar-center"]);
+  click(c.x, c.y);
+  clickPlacedItem("cloth");
+  assert.match(byId("ritual-step-num").textContent, /Step 2 of 5/, "cloth completes step 1 after the detour");
+});
+
+ok("overlay ownership: only ritual.js drives the ritual panels", () => {
+  // Regression: altar.js forced the picker open on every RITUAL state
+  // change, burying the console the moment a mid-ritual placement resumed.
+  const altar = readFileSync(new URL("../src/ui/altar.js", import.meta.url), "utf8");
+  assert.ok(!altar.includes("ritual-overlay"), "altar.js never touches ritual-overlay");
+  assert.ok(!altar.includes("ritual-console"), "altar.js never touches ritual-console");
+});
+
+/* ---- every ritual, walked end-to-end through the real UI ------------------ */
 function startRitualViaUI(index) {
   byId("btn-ritual").listeners.click[0]({});
   const cards = allCreated.filter((e) => e.className.includes("ritual-card")).slice(-RITUALS.length);
@@ -406,7 +439,6 @@ function clickPlacedItem(id) {
   }
   assert.fail(`no placed ${id} to click`);
 }
-const stepNum = () => byId("ritual-step-num").textContent;
 
 ok("opening-the-space walks end-to-end through the real UI", () => {
   builder.arrangement.clear();

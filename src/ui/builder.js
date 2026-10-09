@@ -272,6 +272,10 @@ export function initBuilder(handles) {
   }
 
   function cancelPlacing() {
+    // leaving PLACING deliberately returns to arranging — which lets the
+    // ritual resume if a mid-ritual placement was cancelled (instead of
+    // stranding the walk in PLACING with every door shut)
+    if (machine.state === "PLACING") machine.transition("BUILDING");
     mode.kind = null;
     mode.data = null;
     destroyGhost();
