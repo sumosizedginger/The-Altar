@@ -42,10 +42,40 @@ Then open http://localhost:8000.
 - `/debug.html` — the symbol engine debug grid: all 40 symbols drawn live in
   one WebGL context, with per-symbol replay of their recorded stroke order
 - `/altar.html` — **the workshop**: the 3D room (procedural textures, three
-  lighting presets, quality tiers) and the Altar Builder — raycast placement
-  with live zone rules, drag/rotate/remove, undo/redo, sandbox summary with
-  screenshot + JSON export
+  lighting presets, quality tiers, bloom + vignette post pass) and the
+  Altar Builder — raycast placement with live zone rules, drag/rotate/remove,
+  undo/redo, sandbox summary with screenshot + JSON export — and **Ritual
+  Mode**: three guided sequences with positional synthesized sound
 - `/codex.html` — the Codex: browse the dataset with live symbol previews
+
+### Ritual Mode (Phase 6)
+
+Three guided contemplative sequences (composed for this experience, honestly
+labeled — no lineage reconstruction): *Opening a Quiet Space*, *Evening
+Flame*, and *Facing the Four Quarters*. There is no fail state: steps give
+hints after a delay, skips are recorded as notes, and substitutes count
+(a singing bowl may stand in for a bell). Tracing a placed symbol replays
+its recorded stroke order under your pointer.
+
+All sound is **synthesized** (Web Audio — the repo contains no audio files)
+and **positional**: every sound plays from the item's place in the room
+through a panner node, with the listener driven by the camera. The bell at
+the altar is quieter from the door, as it should be.
+
+### Post pass (Phase 7)
+
+A small hand-rolled pipeline (no composer dependency): scene → bright-pass
+→ separable blur → composite with bloom, a gentle vignette, and a faint
+static grain (so gradients never band). Bloom is tier-gated (museum and
+gallery); plate renders direct. Applied to the 3D pass only.
+
+### Why there is no service worker
+
+The spec lists it as optional, and it was consciously omitted: the dev
+server deliberately sends `Cache-Control: no-store` so the browser can
+never serve stale modules after a code change — an offline cache would
+quietly reintroduce exactly that failure class. If you deploy a built
+distribution with hashed filenames, a cache-first worker is the right tool.
 
 ### Validating the dataset (Phase 1 gate)
 
@@ -129,8 +159,8 @@ requirements, not nice-to-haves.
 | 3 | State machine (THRESHOLD→CODEX→PLACING→BUILDING→RITUAL→SUMMARY + sandbox flag), central event bus, parchment Codex UI. | ✅ complete |
 | 4 | 3D room, props, lighting, atmosphere, procedural textures, quality tiers. | ✅ complete |
 | 5 | Altar Builder: raycast placement, rules engine, undo/redo, sandbox, summary, screenshot. | ✅ complete |
-| 6 | Ritual Mode with positional synthesized audio and step sequencing. | pending |
-| 7 | Polish: post-FX, accessibility pass, error handling, optional service worker. | pending |
+| 6 | Ritual Mode with positional synthesized audio and step sequencing. | ✅ complete |
+| 7 | Polish: post-FX, accessibility pass, error handling, optional service worker. | ✅ complete (service worker consciously omitted — see below) |
 
 Each phase ends with a pass/fail checklist; we do not advance until it passes.
 

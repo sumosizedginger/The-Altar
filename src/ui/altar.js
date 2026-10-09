@@ -97,6 +97,7 @@ function applyTier(name, { first = false } = {}) {
   rig.setFlameLights(s.flameLights);
   rig.setDustCount(s.dust);
   $("sel-tier").value = tier;
+  syncPostTier();
 }
 
 function armProbe() {
@@ -130,6 +131,23 @@ const cameraCtl = createCameraRig({ camera, dom: renderer.domElement, reducedMot
 cameraCtl.setView("room");
 cameraCtl.update(1);
 
+/* ---- post pass (Phase 7): bloom + vignette on the 3D pass only ---------- */
+const postfx = createPostFX({ renderer });
+function syncPostTier() {
+  postfx.setBloomEnabled(activeTier !== "plate");
+  postfx.setVignette(0.42);
+}
+const postSize = () => postfx.setSize(window.innerWidth, window.innerHeight);
+window.addEventListener("resize", postSize);
+postSize();
+
+/* ---- procedural positional audio (Phase 6) -------------------------------- */
+const audio = createAudioEngine();
+window.addEventListener("pointerdown", () => audio.unlock(), { once: true });
+window.addEventListener("keydown", () => audio.unlock(), { once: true });
+const UP = new THREE.Vector3(0, 1, 0);
+const camForward = new THREE.Vector3();
+
 /* ---- render loop ---------------------------------------------------------------------- */
 let contextOk = true;
 let swayTime = 0;
@@ -150,7 +168,13 @@ function frame(now) {
     camera.lookAt(cameraCtl.state.target);
   }
   renderer.toneMappingExposure = rig.current.exposure;
-  renderer.render(scene, camera);
+
+  camera.getWorldDirection(camForward);
+  audio.updateListener(camera.position, camForward, UP);
+  ritualRef.current?.update(dt);
+
+  if (activeTier === "plate") renderer.render(scene, camera);
+  else postfx.render(scene, camera);
 
   probe?.push(dt);
   fpsAccum += dt;
@@ -204,6 +228,7 @@ resize();
 rig.setPreset("dusk");
 
 const app = createApp();
+const ritualRef = { current: null };
 const builder = initBuilder({
   app,
   renderer,
@@ -215,7 +240,12 @@ const builder = initBuilder({
   reducedMotion,
   notice,
   cameraCtl,
+  audio,
+  onItemClick: (uid) => ritualRef.current?.itemClicked(uid),
 });
+
+const ritual = initRitual({ app, builder, audio, camera, notice });
+ritualRef.current = ritual;
 
 // The threshold door: enter straight into the placing workshop.
 $("btn-enter-workshop").addEventListener("click", () => {
@@ -243,9 +273,13 @@ app.bus.on(EVENTS.STATE_CHANGE, () => {
   $("ritual-overlay").hidden = st !== "RITUAL";
   $("summary-overlay").hidden = st !== "SUMMARY";
   $("state-desc").textContent = STATE_DESCRIPTION[st] ?? "";
-  if (st === "SUMMARY") builder.renderSummary();
+  if (st === "SUMMARY") builder.renderSummary(ritualRef.current?.record ?? null);
 });
 app.bus.emit(EVENTS.STATE_CHANGE, { from: "THRESHOLD", to: app.machine.state, sandbox: false });
+
+window.addEventListener("error", (e) => {
+  if (e?.message) notice("Something slipped — the room caught it. If a panel looks stuck, reloading is safe.");
+});
 
 $("btn-ritual-back").addEventListener("click", () => app.machine.transition("BUILDING"));
 $("btn-ritual-back-2").addEventListener("click", () => app.machine.transition("BUILDING"));

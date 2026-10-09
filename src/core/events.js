@@ -44,6 +44,14 @@ export const EVENTS = {
   PLACEMENT_DENIED: "placement:denied", // {kind, id, zoneId, reason}
   PLACEMENT_NOTED: "placement:noted", // {kind, id, zoneId, verdict, rationale}
   BUILDER_MODE: "builder:mode", // {mode} "placing" | "building" | "summary"
+
+  /* ---- ritual mode (Phase 6) -------------------------------------------- */
+  RITUAL_START: "ritual:start", // {ritualId, stepCount}
+  RITUAL_STEP: "ritual:step", // {ritualId, index, step}
+  RITUAL_STEP_DONE: "ritual:step:done", // {ritualId, index, via}
+  RITUAL_HINT_DUE: "ritual:hint:due", // {ritualId, index, text}
+  RITUAL_COMPLETE: "ritual:complete", // {ritualId, record}
+  RITUAL_ENDED: "ritual:ended", // {ritualId, record} — complete or abandoned
 };
 
 export const NOTICE_TONES = Object.freeze({ GENTLE: "gentle", FAULT: "fault" });

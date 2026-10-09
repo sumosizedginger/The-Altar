@@ -32,8 +32,8 @@ const TRADITION_NAMES = Object.fromEntries(Object.values(TRADITIONS).map((t) => 
 const PHASE_NOTE = {
   PLACING: "The workshop is open in the 3D room — choose from the library, set each piece, and the room will share what convention says.",
   BUILDING: "The workshop is open in the 3D room — drag, rotate, undo, and when it feels right, summarize or step toward ritual.",
-  RITUAL: "Ritual Mode — guided steps, positional synthesized sound — arrives in Phase 6.",
-  SUMMARY: "The summary lives in the workshop: a keepsake record and screenshot of what you placed.",
+  RITUAL: "Ritual Mode is live in the workshop — guided sequences with positional synthesized sound.",
+  SUMMARY: "The summary lives in the workshop: a keepsake record — arrangement, screenshot, and the ritual you walked.",
 };
 
 const VERDICT_CHIP = { allowed: "chip-solid", warned: "chip", forbidden: "chip-ink" };

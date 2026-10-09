@@ -59,7 +59,7 @@ function applyWallOffset(pos3, wall) {
 }
 
 export function initBuilder(handles) {
-  const { app, renderer, scene, camera, room, reducedMotion, notice, cameraCtl } = handles;
+  const { app, renderer, scene, camera, room, reducedMotion, notice, cameraCtl, audio = null, onItemClick = null } = handles;
 
   const machine = app.machine;
   const bus = app.bus;
@@ -467,6 +467,7 @@ export function initBuilder(handles) {
           rotationY: anchor.rotationY,
         });
         if (result.ok) {
+          playFor(mode.kind, mode.data, p, 0.8);
           if (machine.state === "PLACING") machine.transition("BUILDING");
           keepPlacingIfShift(e);
         }
@@ -476,10 +477,15 @@ export function initBuilder(handles) {
       return;
     }
 
-    if (machine.state === "BUILDING") {
+    if (machine.state === "BUILDING" || machine.state === "RITUAL") {
       const hit = hitTest(e);
-      if (hit?.type === "item") selectItem(hit.uid);
-      else cancelSelection();
+      if (hit?.type === "item") {
+        if (machine.state === "BUILDING") playFor(arrangement.get(hit.uid)?.kind, arrangement.get(hit.uid), getWorldPos(hit.uid), 0.45);
+        onItemClick?.(hit.uid);
+        if (machine.state === "BUILDING") selectItem(hit.uid);
+      } else if (machine.state === "BUILDING") {
+        cancelSelection();
+      }
     }
   });
 
@@ -524,8 +530,50 @@ export function initBuilder(handles) {
     $("item-controls").hidden = true;
   }
 
+  /* ---- ritual/audio surface (Phase 6) ---------------------------------- */
+  function toolSoundType(uid) {
+    const r = arrangement.get(uid);
+    if (!r) return "cloth";
+    if (r.kind === "symbol") return "chime";
+    return TOOLS_BY_ID[r.id]?.sound?.type ?? "cloth";
+  }
+
+  function playFor(kind, data, pos, level = 0.7) {
+    if (!audio) return;
+    const type = kind === "tool" ? data?.sound?.type ?? "cloth" : "chime";
+    audio.playAt(type, pos, { level });
+  }
+
+  function getWorldPos(uid) {
+    const m = meshes.get(uid);
+    if (!m) return null;
+    const v = new THREE.Vector3();
+    m.group.getWorldPosition(v);
+    return v;
+  }
+
+  function screenPosOf(uid) {
+    const p = getWorldPos(uid);
+    if (!p) return null;
+    const v = p.clone().project(camera);
+    if (v.z > 1) return null;
+    return {
+      x: (v.x * 0.5 + 0.5) * window.innerWidth,
+      y: (-v.y * 0.5 + 0.5) * window.innerHeight,
+    };
+  }
+
+  function setPlacingTool(toolId) {
+    const t = TOOLS_BY_ID[toolId];
+    if (t) setPlacing("tool", t);
+  }
+
+  function replaySymbol(uid) {
+    meshes.get(uid)?.instance?.replay();
+  }
+
   /* ---- summary keepsake ---------------------------------------------------------------------------- */
-  function renderSummary() {
+  function renderSummary(ritualRecord = null) {
     // screenshot: render now, capture immediately
     renderer.render(scene, camera);
     const src = renderer.domElement;
@@ -561,7 +609,29 @@ export function initBuilder(handles) {
       list.append(Object.assign(document.createElement("li"), { textContent: "An empty altar — a beginning, too." }));
     }
 
-    const blob = new Blob([JSON.stringify(arrangement.serialize(), null, 2)], { type: "application/json" });
+    if (ritualRecord) {
+      const h = document.createElement("h3");
+      h.textContent = "The ritual — what was walked";
+      list.append(h);
+      const ol = document.createElement("ol");
+      for (const st of ritualRecord.steps ?? []) {
+        const li = document.createElement("li");
+        li.textContent = st.skipped
+          ? `${st.id} — set aside`
+          : `${st.id} — ${st.via}${st.substituteUsed ? " (substitute)" : ""}`;
+        ol.append(li);
+      }
+      list.append(ol);
+      const notes = document.createElement("p");
+      notes.className = "summary-note";
+      notes.textContent = (ritualRecord.notes ?? []).join(" · ");
+      list.append(notes);
+    }
+
+    const blob = new Blob(
+      [JSON.stringify({ arrangement: arrangement.serialize(), ritual: ritualRecord }, null, 2)],
+      { type: "application/json" },
+    );
     $("btn-shot-json").href = URL.createObjectURL(blob);
   }
 
@@ -664,5 +734,13 @@ export function initBuilder(handles) {
   buildCatalog();
   reconcile();
 
-  return { arrangement, renderSummary, cancelPlacing };
+  return {
+    arrangement,
+    renderSummary,
+    cancelPlacing,
+    getWorldPos,
+    screenPosOf,
+    setPlacingTool,
+    replaySymbol,
+  };
 }
